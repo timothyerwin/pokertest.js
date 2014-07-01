@@ -1,5 +1,5 @@
 var path = require('path');
-var poker = require('./poker');
+var poker = require('./games/poker');
 
 console.log("let the games begin!");
 
