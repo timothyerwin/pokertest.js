@@ -1,0 +1,23 @@
+{
+  "name": "pokertest.js",
+  "version": "1.0.0",
+  "description": "solve problem @ http://projecteuler.net/problem=54",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/timothyerwin/pokertest.js.git"
+  },
+  "keywords": [
+    "node.js",
+    "poker"
+  ],
+  "author": "Tim Erwin",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/timothyerwin/pokertest.js/issues"
+  },
+  "homepage": "https://github.com/timothyerwin/pokertest.js"
+}
