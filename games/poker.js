@@ -126,10 +126,6 @@ poker.hand = function(hand) {
     throw ("insufficient cards for a hand");
 };
 
-poker.hand.prototype.hasValues = function(combo) {
-
-};
-
 poker.hand.prototype.sortValues = function(desc) {
   var values = this.getValues();
 
@@ -158,15 +154,6 @@ poker.hand.prototype.getUniqueValues = function() {
 
 };
 
-poker.hand.prototype.getDuplicateValues = function() {
-
-};
-
-poker.hand.prototype.getPairCount = function() {
-
-
-};
-
 poker.hand.prototype.getSuits = function() {
   var c = this.cards;
 
@@ -174,7 +161,7 @@ poker.hand.prototype.getSuits = function() {
 };
 
 poker.hand.prototype.isFlush = function() {
-  var suits = lookup.suits;
+  var suits = poker.lookup.suits;
 
   for (var i = 0; i < suits.length; i++) {
     var s = suits[i];
@@ -212,7 +199,6 @@ poker.game.prototype.play = function() {
     results.push(rank);
   }
 
-  console.log(results);
 };
 
 poker.game.prototype.rank = function(player) {
@@ -322,36 +308,91 @@ poker.rankers = [
 
       result.push(3);
       result.push(poker.lookup.values[keys[0]]);
-      result.push(poker.lookup.values[keys[1]]);
 
       var leftover = sorted.split(keys[0]).join('').split('');
 
       for (var i = 0; i < leftover.length; i++)
         result.push(poker.lookup.values[leftover[i]]);
 
-      console.log("Three of a Kind");
+      return result;
+    }
+
+    return null;
+  }),
+  new poker.ranker("Straight", function(data) {
+
+    var values = [];
+
+    for(var i = 0; i < data.cache.sorted.length; i ++)
+      values.push(poker.lookup.values[data.cache.sorted[i]]);
+
+    var consecutive = false;
+
+    for(var x = 0; x < values.length-1; x++){
+      consecutive = (values[x] - values[x+1] == 1);
+
+      if(!consecutive) break;
+    }
+
+    if(consecutive){
+      var results = [];
+
+      results.push(4);
+      results = results.concat(data.cache.sorted.split(''));
+
+      return results;
+    }
+
+    return null;
+  }),
+  new poker.ranker("Flush", function(data) {
+    if (data.hand.isFlush()) {
+      var results = [];
+
+      results.push(5);
+
+      return results;
+    }
+
+    return null;
+  }),
+  new poker.ranker("Full House", function(data) {
+
+  }),
+  new poker.ranker("Four of a Kind", function(data) {
+    var sorted = data.cache.sorted;
+    var duplicates = data.cache.duplicates;
+
+    var keys = Object.keys(duplicates);
+
+    if (keys.length == 1 && duplicates[keys[0]] == 4) {
+      var result = [];
+
+      result.push(7);
+      result.push(poker.lookup.values[keys[0]]);
+
+      var leftover = sorted.split(keys[0]).join('').split('');
+
+      for (var i = 0; i < leftover.length; i++)
+        result.push(poker.lookup.values[leftover[i]]);
 
       return result;
     }
 
     return null;
   }),
-  new poker.ranker("Straight", function(hand) {
+  new poker.ranker("Straight Flush", function(data) {
 
   }),
-  new poker.ranker("Flush", function(hand) {
+  new poker.ranker("Royal Flush", function(data) {
+    if (data.hand.isFlush() && data.cache.sorted === "AKQJT") {
+      var results = [];
 
-  }),
-  new poker.ranker("Full House", function(hand) {
+      results.push(9);
 
-  }),
-  new poker.ranker("Four of a Kind", function(hand) {
+      return results;
+    }
 
-  }),
-  new poker.ranker("Straight Flush", function(hand) {
-
-  }),
-  new poker.ranker("Royal Flush", function(hand) {
-
+    return null;
   })
 ];
