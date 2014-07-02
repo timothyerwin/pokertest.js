@@ -53,6 +53,10 @@ poker.tournament.prototype.play = function(deals, next) {
     this.games.push(result);
   }
 
+  for (var x = 0; x < this.games.length; x++) {
+    console.log(this.games[x].win.player.hand.cards + " : " + this.games[x].lose.player.hand.cards );
+  }
+
   if (next) next();
 };
 
@@ -199,10 +203,60 @@ poker.game.prototype.play = function() {
     results.push(rank);
   }
 
+  return this.decide(results);
+};
+
+poker.game.prototype.decide = function(ranks) {
+  var scores = [];
+
+  var sort2d = function(i) {
+    return function(a, b) {
+      return a[i] < b[i];
+    };
+  };
+
+  for (var i = 0; i < ranks.length; i++) {
+    var rank = ranks[i];
+
+    var rankscores = [];
+
+    rankscores.push(rank);
+    rankscores = rankscores.concat(rank.scores);
+
+    scores.push(rankscores);
+  }
+
+  for (var a = 1; a < 7; a++) {
+    var results = scores.sort(sort2d(a));
+
+    if (results[0][a] > results[1][a]){
+      return {
+        win: results[0][0],
+        lose: results[1][0]
+      };
+    }
+  }
 };
 
 poker.game.prototype.rank = function(player) {
   var rank = null;
+
+  var isConsecutive = function(sorted) {
+    var values = [];
+
+    for (var a = 0; a < sorted.length; a++)
+      values.push(poker.lookup.values[sorted[a]]);
+
+    var consecutive = false;
+
+    for (var x = 0; x < values.length - 1; x++) {
+      consecutive = (values[x] - values[x + 1] == 1);
+
+      if (!consecutive) break;
+    }
+
+    return consecutive;
+  };
 
   for (var i = 0; i < poker.rankers.length; i++) {
     var ranker = poker.rankers[i];
@@ -215,7 +269,9 @@ poker.game.prototype.rank = function(player) {
       cache: {
         sorted: sorted,
         sortedArray: sorted.split(''),
-        duplicates: duplicates
+        duplicates: duplicates,
+        consecutive: isConsecutive(sorted),
+        flush: player.hand.isFlush()
       }
     });
 
@@ -271,8 +327,6 @@ poker.rankers = [
 
       return result;
     }
-
-    return null;
   }),
   new poker.ranker("Two Pairs", function(data) {
     var sorted = data.cache.sorted;
@@ -294,8 +348,6 @@ poker.rankers = [
 
       return result;
     }
-
-    return null;
   }),
   new poker.ranker("Three of a Kind", function(data) {
     var sorted = data.cache.sorted;
@@ -316,48 +368,44 @@ poker.rankers = [
 
       return result;
     }
-
-    return null;
   }),
   new poker.ranker("Straight", function(data) {
-
-    var values = [];
-
-    for(var i = 0; i < data.cache.sorted.length; i ++)
-      values.push(poker.lookup.values[data.cache.sorted[i]]);
-
-    var consecutive = false;
-
-    for(var x = 0; x < values.length-1; x++){
-      consecutive = (values[x] - values[x+1] == 1);
-
-      if(!consecutive) break;
-    }
-
-    if(consecutive){
+    if (data.cache.consecutive) {
       var results = [];
 
       results.push(4);
-      results = results.concat(data.cache.sorted.split(''));
+      results = results.concat(data.cache.sortedArray);
 
       return results;
     }
-
-    return null;
   }),
   new poker.ranker("Flush", function(data) {
-    if (data.hand.isFlush()) {
+    if (data.hand.flush) {
       var results = [];
 
       results.push(5);
 
       return results;
     }
-
-    return null;
   }),
   new poker.ranker("Full House", function(data) {
+    var sorted = data.cache.sorted;
+    var duplicates = data.cache.duplicates;
 
+    var keys = Object.keys(duplicates);
+
+    if (keys.length == 2 && ((duplicates[keys[0]] == 3 && duplicates[keys[1]] == 2) || (duplicates[keys[0]] == 2 && duplicates[keys[1]] == 3))) {
+      var result = [];
+
+      result.push(6);
+
+      if (duplicates[keys[0]] == 3)
+        result.push(poker.lookup.values[keys[0]]);
+      else
+        result.push(poker.lookup.values[keys[1]]);
+
+      return result;
+    }
   }),
   new poker.ranker("Four of a Kind", function(data) {
     var sorted = data.cache.sorted;
@@ -378,21 +426,24 @@ poker.rankers = [
 
       return result;
     }
-
-    return null;
   }),
   new poker.ranker("Straight Flush", function(data) {
+    if (data.cache.flush && data.consecutive) {
+      var result = [];
 
+      result.push(8);
+      results = results.concat(data.cache.sortedArray);
+
+      return results;
+    }
   }),
   new poker.ranker("Royal Flush", function(data) {
-    if (data.hand.isFlush() && data.cache.sorted === "AKQJT") {
+    if (data.cache.flush && data.cache.sorted === "AKQJT") {
       var results = [];
 
       results.push(9);
 
       return results;
     }
-
-    return null;
   })
 ];
