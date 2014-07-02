@@ -56,8 +56,8 @@ poker.tournament.prototype.play = function(deals, next) {
   var p0 = 0;
 
   for (var x = 0; x < this.games.length; x++) {
-    if(this.games[x].win.player.name == "player 0")
-      p0 ++;
+    if (this.games[x].win.player.name == "player 0")
+      p0++;
   }
 
   console.log(p0 + " wins total");
@@ -234,7 +234,7 @@ poker.game.prototype.decide = function(ranks) {
   for (var a = 1; a < 7; a++) {
     var results = scores.sort(sort2d(a));
 
-    if (results[0][a] > results[1][a]){
+    if (results[0][a] > results[1][a]) {
       return {
         win: results[0][0],
         lose: results[1][0]
@@ -263,7 +263,7 @@ poker.game.prototype.rank = function(player) {
     return consecutive;
   };
 
-  for (var i = 0; i < poker.rankers.length; i++) {
+  for (var i = poker.rankers.length - 1; i >= 0; i--) {
     var ranker = poker.rankers[i];
 
     var sorted = player.hand.sortValues(true);
@@ -280,8 +280,10 @@ poker.game.prototype.rank = function(player) {
       }
     });
 
-    if (scores)
+    if (scores) {
       rank = new poker.rank(player, ranker.type, scores);
+      break;
+    }
   }
 
   return rank;
