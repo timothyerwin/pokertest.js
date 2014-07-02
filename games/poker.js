@@ -243,25 +243,25 @@ poker.game.prototype.decide = function(ranks) {
   }
 };
 
+poker.game.prototype.isConsecutive = function(sorted) {
+  var values = [];
+
+  for (var a = 0; a < sorted.length; a++)
+    values.push(poker.lookup.values[sorted[a]]);
+
+  var consecutive = false;
+
+  for (var x = 0; x < values.length - 1; x++) {
+    consecutive = (values[x] - values[x + 1] == 1);
+
+    if (!consecutive) break;
+  }
+
+  return consecutive;
+};
+
 poker.game.prototype.rank = function(player) {
   var rank = null;
-
-  var isConsecutive = function(sorted) {
-    var values = [];
-
-    for (var a = 0; a < sorted.length; a++)
-      values.push(poker.lookup.values[sorted[a]]);
-
-    var consecutive = false;
-
-    for (var x = 0; x < values.length - 1; x++) {
-      consecutive = (values[x] - values[x + 1] == 1);
-
-      if (!consecutive) break;
-    }
-
-    return consecutive;
-  };
 
   for (var i = poker.rankers.length - 1; i >= 0; i--) {
     var ranker = poker.rankers[i];
@@ -275,7 +275,7 @@ poker.game.prototype.rank = function(player) {
         sorted: sorted,
         sortedArray: sorted.split(''),
         duplicates: duplicates,
-        consecutive: isConsecutive(sorted),
+        consecutive: this.isConsecutive(sorted),
         flush: player.hand.isFlush()
       }
     });
