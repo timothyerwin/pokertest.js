@@ -82,16 +82,47 @@ poker.lookup = {
   suits: ["D", "H", "S", "C"]
 };
 
-poker.hand = function(hand) {
-  var self = this;
+poker.array = {
+  getDuplicates: function(array) {
+    var uniques = {},
+      val;
+    var dups = {};
+    for (var i = 0, len = array.length; i < len; i++) {
+      val = array[i];
+      if (val in uniques) {
+        uniques[val]++;
+        dups[val] = uniques[val];
+      } else
+        uniques[val] = 1;
 
+    }
+    return (dups);
+  },
+  getUnique: function(array) {
+    var arr = array,
+      i,
+      len = arr.length,
+      out = [],
+      obj = {};
+
+    for (i = 0; i < len; i++)
+      obj[arr[i]] = 0;
+
+    for (i in obj)
+      out.push(i);
+
+    return out.join('');
+  }
+};
+
+poker.hand = function(hand) {
   if (!hand)
     throw ("invalid hand");
 
-  self.hand = hand;
-  self.cards = hand.split(" ");
+  this.hand = hand;
+  this.cards = hand.split(" ");
 
-  if (self.cards.length != 5)
+  if (this.cards.length != 5)
     throw ("insufficient cards for a hand");
 };
 
@@ -120,6 +151,20 @@ poker.hand.prototype.getValues = function() {
   var c = this.cards;
 
   return c[0][0] + c[1][0] + c[2][0] + c[3][0] + c[4][0];
+};
+
+poker.hand.prototype.getUniqueValues = function() {
+  return poker.array.getUnique(this.sortValues().split(''));
+
+};
+
+poker.hand.prototype.getDuplicateValues = function() {
+
+};
+
+poker.hand.prototype.getPairCount = function() {
+
+
 };
 
 poker.hand.prototype.getSuits = function() {
@@ -157,18 +202,17 @@ poker.game = function(deal) {
 };
 
 poker.game.prototype.play = function() {
-
-  var scores = [];
+  var results = [];
 
   for (var i = 0; i < this.players.length; i++) {
     var player = this.players[i];
 
-    var score = this.rank(player);
+    var rank = this.rank(player);
 
-    scores.push(score);
-
-    console.log(player.hand.sortValues());
+    results.push(rank);
   }
+
+  console.log(results);
 };
 
 poker.game.prototype.rank = function(player) {
@@ -177,9 +221,20 @@ poker.game.prototype.rank = function(player) {
   for (var i = 0; i < poker.rankers.length; i++) {
     var ranker = poker.rankers[i];
 
-    var scores = ranker.execute(player.hand);
+    var sorted = player.hand.sortValues(true);
+    var duplicates = poker.array.getDuplicates(sorted.split(''));
 
-    rank = new poker.rank(player, ranker.type, scores);
+    var scores = ranker.execute({
+      hand: player.hand,
+      cache: {
+        sorted: sorted,
+        sortedArray: sorted.split(''),
+        duplicates: duplicates
+      }
+    });
+
+    if (scores)
+      rank = new poker.rank(player, ranker.type, scores);
   }
 
   return rank;
@@ -197,17 +252,89 @@ poker.ranker = function(type, f) {
 };
 
 poker.rankers = [
-  new poker.ranker("High Card", function(hand) {
+  new poker.ranker("High Card", function(data) {
+    var values = data.cache.sortedArray;
 
+    var result = [];
+
+    result.push(0);
+
+    for (var i = 0; i < values.length; i++)
+      result.push(poker.lookup.values[values[i]]);
+
+    return result;
   }),
-  new poker.ranker("One Pair", function(hand) {
+  new poker.ranker("One Pair", function(data) {
+    var sorted = data.cache.sorted;
+    var duplicates = data.cache.duplicates;
 
+    var keys = Object.keys(duplicates);
+
+    if (keys.length == 1 && duplicates[keys[0]] == 2) {
+      var result = [];
+
+      var key = keys[0];
+
+      result.push(1);
+      result.push(poker.lookup.values[key]);
+
+      var leftover = sorted.split(key).join('').split('');
+
+      for (var i = 0; i < leftover.length; i++)
+        result.push(poker.lookup.values[leftover[i]]);
+
+      return result;
+    }
+
+    return null;
   }),
-  new poker.ranker("Two Pairs", function(hand) {
+  new poker.ranker("Two Pairs", function(data) {
+    var sorted = data.cache.sorted;
+    var duplicates = data.cache.duplicates;
 
+    var keys = Object.keys(duplicates);
+
+    if (keys.length == 2 && duplicates[keys[0]] == 2 && duplicates[keys[1]] == 2) {
+      var result = [];
+
+      result.push(2);
+      result.push(poker.lookup.values[keys[0]]);
+      result.push(poker.lookup.values[keys[1]]);
+
+      var leftover = sorted.split(keys[0]).join('').split(keys[1]).join('').split('');
+
+      for (var i = 0; i < leftover.length; i++)
+        result.push(poker.lookup.values[leftover[i]]);
+
+      return result;
+    }
+
+    return null;
   }),
-  new poker.ranker("Three of a Kind", function(hand) {
+  new poker.ranker("Three of a Kind", function(data) {
+    var sorted = data.cache.sorted;
+    var duplicates = data.cache.duplicates;
 
+    var keys = Object.keys(duplicates);
+
+    if (keys.length == 1 && duplicates[keys[0]] == 3) {
+      var result = [];
+
+      result.push(3);
+      result.push(poker.lookup.values[keys[0]]);
+      result.push(poker.lookup.values[keys[1]]);
+
+      var leftover = sorted.split(keys[0]).join('').split('');
+
+      for (var i = 0; i < leftover.length; i++)
+        result.push(poker.lookup.values[leftover[i]]);
+
+      console.log("Three of a Kind");
+
+      return result;
+    }
+
+    return null;
   }),
   new poker.ranker("Straight", function(hand) {
 
