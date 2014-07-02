@@ -53,9 +53,14 @@ poker.tournament.prototype.play = function(deals, next) {
     this.games.push(result);
   }
 
+  var p0 = 0;
+
   for (var x = 0; x < this.games.length; x++) {
-    console.log(this.games[x].win.player.hand.cards + " : " + this.games[x].lose.player.hand.cards );
+    if(this.games[x].win.player.name == "player 0")
+      p0 ++;
   }
+
+  console.log(p0 + " wins total");
 
   if (next) next();
 };
